@@ -68,105 +68,6 @@ void *compute(void *arg)
   return NULL;
 }
 
-void *oneThreads(void *arg)
-{
-  char *var1 = "0";
-  pthread_t h1;
-  pthread_create(&h1, NULL, compute, (void *)var1);
-  pthread_join(h1, NULL);
-  return NULL;
-}
-
-// void *twoThreads(void *arg)
-// {
-
-//   param_t param1;
-//   param_t param2;
-
-//   param1.ini = 0;
-//   param1.end = p / 2;
-//   param1.X = X;
-//   param1.Y = Y;
-//   param1.a = a;
-//   param1.Y_avgs = Y_avgs;
-//   param1.p = p;
-//   param1.max_iters = max_iters;
-
-//   param2.ini = p / 2;
-//   param2.end = p;
-//   param2.X = X;
-//   param2.Y = Y;
-//   param2.a = a;
-//   param2.Y_avgs = Y_avgs;
-//   param2.p = p;
-//   param2.max_iters = max_iters;
-
-//   pthread_t h1;
-//   pthread_t h2;
-//   pthread_create(&h1, NULL, &compute, &param1);
-//   pthread_create(&h2, NULL, &compute, &param2);
-//   pthread_join(h1, NULL);
-//   pthread_join(h2, NULL);
-//   return NULL;
-// }
-
-void *fourThreads(void *arg)
-{
-  char *var1 = "0";
-  char *var2 = "1";
-  char *var3 = "2";
-  char *var4 = "3";
-  pthread_t h1;
-  pthread_t h2;
-  pthread_t h3;
-  pthread_t h4;
-  pthread_create(&h1, NULL, compute, (void *)var1);
-  pthread_create(&h2, NULL, compute, (void *)var2);
-  pthread_create(&h3, NULL, compute, (void *)var3);
-  pthread_create(&h4, NULL, compute, (void *)var4);
-  pthread_join(h1, NULL);
-  pthread_join(h2, NULL);
-  pthread_join(h3, NULL);
-  pthread_join(h4, NULL);
-  return NULL;
-}
-
-void *eightThreads(void *arg)
-{
-  char *var1 = "0";
-  char *var2 = "1";
-  char *var3 = "2";
-  char *var4 = "3";
-  char *var5 = "4";
-  char *var6 = "5";
-  char *var7 = "6";
-  char *var8 = "7";
-  pthread_t h1;
-  pthread_t h2;
-  pthread_t h3;
-  pthread_t h4;
-  pthread_t h5;
-  pthread_t h6;
-  pthread_t h7;
-  pthread_t h8;
-  pthread_create(&h1, NULL, compute, (void *)var1);
-  pthread_create(&h2, NULL, compute, (void *)var2);
-  pthread_create(&h3, NULL, compute, (void *)var3);
-  pthread_create(&h4, NULL, compute, (void *)var4);
-  pthread_create(&h5, NULL, compute, (void *)var5);
-  pthread_create(&h6, NULL, compute, (void *)var6);
-  pthread_create(&h7, NULL, compute, (void *)var7);
-  pthread_create(&h8, NULL, compute, (void *)var8);
-  pthread_join(h1, NULL);
-  pthread_join(h2, NULL);
-  pthread_join(h3, NULL);
-  pthread_join(h4, NULL);
-  pthread_join(h5, NULL);
-  pthread_join(h6, NULL);
-  pthread_join(h7, NULL);
-  pthread_join(h8, NULL);
-  return NULL;
-}
 
 int main(int argc, char *argv[])
 {
@@ -397,9 +298,128 @@ int main(int argc, char *argv[])
     break;
   }
   case 8:
-    eightThreads(NULL);
-    /* code */
+  {
+    pthread_t h1;
+    pthread_t h2;
+    pthread_t h3;
+    pthread_t h4;
+    pthread_t h5;
+    pthread_t h6;
+    pthread_t h7;
+    pthread_t h8;
+
+    param_t param1;
+    param_t param2;
+    param_t param3;
+    param_t param4;
+    param_t param5;
+    param_t param6;
+    param_t param7;
+    param_t param8;
+
+    param1.ini = 0;
+    param1.end = p / 8;
+    param1.X = X;
+    param1.Y = Y;
+    param1.a = a;
+    param1.Y_avgs = Y_avgs;
+    param1.p = p;
+    param1.max_iters = max_iters;
+
+    param2.ini = p / 8;
+    param2.end = p / 4;
+    param2.X = X;
+    param2.Y = Y;
+    param2.a = a;
+    param2.Y_avgs = Y_avgs;
+    param2.p = p;
+    param2.max_iters = max_iters;
+
+    param3.ini = p / 4;
+    param3.end = 3*p / 8;
+    param3.X = X;
+    param3.Y = Y;
+    param3.a = a;
+    param3.Y_avgs = Y_avgs;
+    param3.p = p;
+    param3.max_iters = max_iters;
+
+    param4.ini = 3*p / 8;
+    param4.end = p / 2;
+    param4.X = X;
+    param4.Y = Y;
+    param4.a = a;
+    param4.Y_avgs = Y_avgs;
+    param4.p = p;
+    param4.max_iters = max_iters;
+
+    param5.ini = p / 2;
+    param5.end = 5*p / 8;
+    param5.X = X;
+    param5.Y = Y;
+    param5.a = a;
+    param5.Y_avgs = Y_avgs;
+    param5.p = p;
+    param5.max_iters = max_iters;
+
+    param6.ini = 5*p / 8;
+    param6.end = 3*p / 4;
+    param6.X = X;
+    param6.Y = Y;
+    param6.a = a;
+    param6.Y_avgs = Y_avgs;
+    param6.p = p;
+    param6.max_iters = max_iters;
+
+    param7.ini = 3 * p / 4;
+    param7.end = 7 * p / 8;
+    param7.X = X;
+    param7.Y = Y;
+    param7.a = a;
+    param7.Y_avgs = Y_avgs;
+    param7.p = p;
+    param7.max_iters = max_iters;
+
+    param8.ini = 7 * p / 8;
+    param8.end = p;
+    param8.X = X;
+    param8.Y = Y;
+    param8.a = a;
+    param8.Y_avgs = Y_avgs;
+    param8.p = p;
+    param8.max_iters = max_iters;
+
+    pthread_create(&h1, NULL, &compute, &param1);
+    pthread_create(&h2, NULL, &compute, &param2);
+    pthread_create(&h3, NULL, &compute, &param3);
+    pthread_create(&h4, NULL, &compute, &param4);
+    pthread_create(&h5, NULL, &compute, &param5);
+    pthread_create(&h6, NULL, &compute, &param6);
+    pthread_create(&h7, NULL, &compute, &param7);
+    pthread_create(&h8, NULL, &compute, &param8);
+
+    for (it = 0; it < max_iters; it++)
+    {
+      param1.it = it;
+      param2.it = it;
+      param3.it = it;
+      param4.it = it;
+      param5.it = it;
+      param6.it = it;
+      param7.it = it;
+      param8.it = it;
+    }
+
+    pthread_join(h1, NULL);
+    pthread_join(h2, NULL);
+    pthread_join(h3, NULL);
+    pthread_join(h4, NULL);
+    pthread_join(h5, NULL);
+    pthread_join(h6, NULL);
+    pthread_join(h7, NULL);
+    pthread_join(h8, NULL);
     break;
+  }
   default:
     break;
   }
