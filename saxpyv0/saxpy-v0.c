@@ -2,11 +2,11 @@
  * @defgroup   SAXPY saxpy
  *
  * @brief      This file implements an iterative saxpy operation
- * 
- * @param[in] <-p> {vector size} 
+ *
+ * @param[in] <-p> {vector size}
  * @param[in] <-s> {seed}
- * @param[in] <-n> {number of threads to create} 
- * @param[in] <-i> {maximum itertions} 
+ * @param[in] <-n> {number of threads to create}
+ * @param[in] <-i> {maximum itertions}
  *
  * @author     Danny Munera
  * @date       2020
@@ -20,14 +20,13 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-sem_t mutex;
+void *saxpy(void *);
 
 double *X;
 double a;
 double *Y;
 double *Y_avgs;
-
-void *compute(void *);
+sem_t mutex;
 
 typedef struct _param
 {
@@ -35,49 +34,19 @@ typedef struct _param
     int end;
     int it;
     int p;
-} param_t;
-
-void *compute(void *arg)
-{ //Funcion que es ejecutada por los hilos
-    param_t *par = (param_t *)arg;
-    int ini = par->ini;
-    int end = par->end;
-    int it = par->it;
-    int p = par->p;
-    int i;
-    double acc;
-#ifdef DEBUG
-    printf("Thread values start = %d, end = %d, p = %d \n", ini, end, p);
-#endif
-    //SAXPY iterative SAXPY mfunction
-    acc = 0; //Variable local para optimizar el calculo del promedio
-    for (i = ini; i < end; i++)
-    {
-        Y[i] = Y[i] + a * X[i];
-        acc += Y[i];
-    }
-    sem_wait(&mutex);
-    Y_avgs[it] += acc / p; //Seccion critica protegida con semaforo binario
-    sem_post(&mutex);
-
-    return NULL;
-}
+    int max_iters;
+} parameters;
 
 int main(int argc, char *argv[])
 {
-
     unsigned int seed = 1;
+    int p = 10000000;
     int n_threads = 2;
     int max_iters = 1000;
-    int p = 100;
-
-    // Variables to perform SAXPY operation
-    int i, t, it;
-
-    // Variables to get execution time
+    int i, t;
     struct timeval t_start, t_end;
     double exec_time;
-    // Getting input values
+
     int opt;
     while ((opt = getopt(argc, argv, ":p:s:n:i:")) != -1)
     {
@@ -109,10 +78,10 @@ int main(int argc, char *argv[])
         }
     }
     srand(seed);
+
     printf("p = %d, seed = %d, n_threads = %d, max_iters = %d\n",
            p, seed, n_threads, max_iters);
 
-    // initializing data
     X = (double *)malloc(sizeof(double) * p);
     Y = (double *)malloc(sizeof(double) * p);
     Y_avgs = (double *)malloc(sizeof(double) * max_iters);
@@ -146,33 +115,43 @@ int main(int argc, char *argv[])
     printf("a= %f \n", a);
 #endif
 
-    /*
-	 *	Function to parallelize 
-	 */
     gettimeofday(&t_start, NULL);
 
-    pthread_t threads[n_threads]; //Vector para almacenar n hilos
-    param_t params[n_threads];    //Vector para almacenar los argumentos a pasar a n hilos
+    pthread_t threads[n_threads];
+    parameters p_threads[n_threads];
+
     sem_init(&mutex, 0, 1);
+
+    /**
+     * Ciclo principal para crear y ejecutar cada uno de los n hilos basados en el valor
+     * ingresado por el usuario.
+     * Nótese que el inicio y final de cada hilo está determinado por la operación:
+     * inicio = (p / n_threads) * t
+     * fin = (p / n_threads) * (t + 1)
+     * En la creación del hilo se le asignan los parámetros previamente asignados y la
+     * función saxpy.
+    */
 
     for (t = 0; t < n_threads; t++)
     {
-        //pasar valores para operar los vectores
-        params[t].ini = (p / n_threads) * t; //Calculo de porciones asignadas a cada hilo
-        params[t].end = (p / n_threads) * (t + 1);
-        if (t == n_threads - 1)
-        { //Manejo de caso en el que p no es divisible entre n_threads
-            params[t].end = p;
-        }
-        params[t].p = p;
-        pthread_create(&threads[t], NULL, &compute, &params[t]);
-        for (it = 0; it < max_iters; it++)
-        {
-            params[t].it = it;
-        }
-        pthread_join(threads[t], NULL);
+        p_threads[t].ini = (p / n_threads) * t;
+        p_threads[t].end = (p / n_threads) * (t + 1);
+        p_threads[t].p = p;
+        p_threads[t].max_iters = max_iters;
+
+        pthread_create(&threads[t], NULL, &saxpy, &p_threads[t]);
     }
+
+    /**
+     * Aquí se realiza un ciclo aparte para los join debido a que, en el caso en el que
+     * estos se hagan en el mismo ciclo (create y join), tendremos un problema de 
+     * sincronización afectando el rendimiento dado que cada uno de los hilos tendrá 
+     * que esperar que los demás terminen.
+    */
+    for (t = 0; t < n_threads; t++) pthread_join(threads[t], NULL);
+
     gettimeofday(&t_end, NULL);
+
 #ifdef DEBUG
     printf("RES: final vector Y= [ ");
     for (i = 0; i < p - 1; i++)
@@ -189,4 +168,38 @@ int main(int argc, char *argv[])
     printf("Last 3 values of Y: %f, %f, %f \n", Y[p - 3], Y[p - 2], Y[p - 1]);
     printf("Last 3 values of Y_avgs: %f, %f, %f \n", Y_avgs[max_iters - 3], Y_avgs[max_iters - 2], Y_avgs[max_iters - 1]);
     return 0;
+}
+
+void *saxpy(void *arg)
+{
+    parameters *par = (parameters *)arg;
+    int ini = par->ini;
+    int end = par->end;
+    int it = par->it;
+    int p = par->p;
+    int i;
+    int max_iters = par->max_iters;
+    double sumY;
+    /**
+     * Aquí se ejecutará el ciclo de máximas iteraciones definido por el usuario con
+     * el parámetro p, como vemos este se ejecutará por cada uno de los hilos que se
+     * creen.
+     * Se utiliza un semáforo para proteger la variable que almacenará los promedios,
+     * debido a que todos los hilos pueden acceder a ella lo que crearía una race
+     * condition.
+    */
+    for (it = 0; it < max_iters; it++)
+    {
+        sumY = 0; 
+        for (i = ini; i < end; i++)
+        {
+            Y[i] = Y[i] + a * X[i];
+            sumY += Y[i];
+        }
+        sem_wait(&mutex);
+        Y_avgs[it] += sumY / p; 
+        sem_post(&mutex);
+    }
+
+    return NULL;
 }
